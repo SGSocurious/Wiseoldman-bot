@@ -24,7 +24,7 @@ def save_snapshot(snapshot):
         print(f"❌ Fout bij opslaan van snapshot: {e}")
 
 def fetch_competition_data():
-    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
+    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}?expand=participations"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -33,18 +33,26 @@ def fetch_competition_data():
         print(f"❌ Fout bij ophalen van competitiegegevens: {e}")
         return None
 
+def send_discord_update(message):
+    data = {"content": message}
+    try:
+        resp = requests.post(WEBHOOK_URL, json=data)
+        resp.raise_for_status()
+        print("✅ Discord update verzonden.")
+    except requests.RequestException as e:
+        print(f"❌ Fout bij verzenden Discord update: {e}")
+
 def main_loop():
     print("🚀 Bot gestart...")
+    last_snapshot = load_snapshot()
+
     while True:
         print("\n⏳ Ophalen van competitiegegevens...")
-
         data = fetch_competition_data()
         if not data:
             time.sleep(30)
             continue
 
-        # Print de hele data keys en of participations er in zitten
-        print(f"DEBUG: Keys in response: {list(data.keys())}")
         participations = data.get("participations", None)
         if participations is None:
             print("⚠️ 'participations' is None! Controleer of '?expand=participations' werkt.")
@@ -57,15 +65,35 @@ def main_loop():
             time.sleep(30)
             continue
 
-        # Print deelnemersnamen en hun gained waarde
-        for p in participations:
-            player_data = p.get("player", {})
-            username = player_data.get("displayName", "<onbekend>")
-            progress = p.get("progress", {})
-            gained = progress.get("gained", "<geen gained>")
-            print(f"DEBUG: Speler {username} heeft gained = {gained}")
+        changes = []
+        new_snapshot = {}
 
-        # Even stoppen hier om eerst te controleren wat binnenkomt
+        for p in participations:
+            player = p.get("player", {})
+            username = player.get("displayName", "<onbekend>")
+            progress = p.get("progress", {})
+            gained = progress.get("gained", 0)
+
+            player_id = str(p.get("playerId"))
+
+            new_snapshot[player_id] = gained
+            old_gained = last_snapshot.get(player_id, 0)
+            diff = gained - old_gained
+
+            print(f"DEBUG: Speler {username} heeft gained = {gained}, vorig = {old_gained}, verschil = {diff}")
+
+            if diff > 0:
+                changes.append(f"🎉 {username} heeft {diff} punten gewonnen! (Totaal: {gained})")
+
+        if changes:
+            message = "**Update Competitie:**\n" + "\n".join(changes)
+            send_discord_update(message)
+        else:
+            print("ℹ️ Geen veranderingen, geen Discord update.")
+
+        save_snapshot(new_snapshot)
+        last_snapshot = new_snapshot
+
         print("🔧 Debugcheck klaar, script pauzeert 60 seconden.")
         time.sleep(60)
 
