@@ -7,8 +7,24 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/1379865773727547422/XB3C3tzt8pPV
 SLEEP_INTERVAL = 30  # elke 30 seconden
 
 last_snapshot = {}
+metric_label = "gain"  # default label (XP, KC, etc.)
+
+# Optional: zet mapping van metrics → label
+METRIC_LABELS = {
+    "ehp": "EHP",
+    "ehb": "EHB",
+    "clue_all": "Clues",
+    "boss_general_graardor": "KC",
+    "hunter": "XP",
+    "fishing": "XP",
+    "magic": "XP",
+    "runecraft": "XP",
+    # Voeg meer toe als je wilt
+}
 
 def get_competition_data():
+    global metric_label
+
     url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
     response = requests.get(url)
     response.raise_for_status()
@@ -24,11 +40,15 @@ def get_competition_data():
         print("⚠️ 'participants' veld is geen lijst:", participants)
         return None
 
+    # Haal metric op en zet label voor Discord output
+    metric = data.get("metric", "unknown")
+    metric_label = METRIC_LABELS.get(metric, metric.upper())
+
     return participants
 
 def build_message(current_data):
     global last_snapshot
-    lines = ["📊 **Competition Update (last 30s)**"]
+    lines = [f"📊 **Competition Update (last 30s, {metric_label})**"]
     current_snapshot = {}
 
     sorted_players = sorted(
@@ -37,28 +57,25 @@ def build_message(current_data):
         reverse=True
     )
 
+    updates_found = False
+
     for idx, player in enumerate(sorted_players[:10], start=1):
         player_info = player.get("player", {})
         username = player_info.get("displayName", "Unknown")
         gained = player.get("progress", {}).get("gained", 0)
-        rank_change = ""
         current_snapshot[username] = gained
 
-        if username in last_snapshot:
-            diff = gained - last_snapshot[username]
-            if diff > 0:
-                rank_change = f" (+{diff:,} xp)"
-            elif diff == 0:
-                continue  # geen verandering, dus overslaan
-        else:
-            rank_change = f" (+{gained:,} xp)"
+        prev_gained = last_snapshot.get(username, 0)
+        diff = gained - prev_gained
 
-        lines.append(f"**#{idx}** {username}: {gained:,} xp{rank_change}")
+        if diff > 0:
+            updates_found = True
+            lines.append(f"**#{idx}** {username}: {gained:,} {metric_label} (+{diff:,})")
 
     last_snapshot = current_snapshot
 
-    if len(lines) == 1:
-        return None  # geen updates
+    if not updates_found:
+        return None
 
     return "\n".join(lines)
 
@@ -83,8 +100,7 @@ def main_loop():
             if message:
                 send_to_discord(message)
             else:
-                print("ℹ️ Geen XP-veranderingen, geen Discord update.")
-
+                print("ℹ️ Geen veranderingen, geen Discord update.")
         except Exception as e:
             print(f"❌ Fout: {e}")
         time.sleep(SLEEP_INTERVAL)
