@@ -34,9 +34,9 @@ def fetch_competition_data():
         return None
 
 def build_update_message(changes, metric):
-    lines = [f"📈 **Update voor competitie `{metric}`**\n"]
+    lines = [f"📢 **Update voor competitie** *(metric: {metric})*\n"]
     for username, (old_gain, new_gain, delta) in changes.items():
-        lines.append(f"🔹 **{username}**: +{delta} ({old_gain} → {new_gain})")
+        lines.append(f"🔹 **{username}**: +{delta} (was {old_gain} → nu {new_gain})")
     return "\n".join(lines)
 
 def main_loop():
@@ -46,13 +46,13 @@ def main_loop():
 
         data = fetch_competition_data()
         if not data:
-            time.sleep(30)
+            time.sleep(60)
             continue
 
-        participants = data.get("participants")
-        if not isinstance(participants, list):
+        participants = data.get("participants", [])
+        if not participants:
             print("⚠️ Geen deelnemers gevonden.")
-            time.sleep(30)
+            time.sleep(60)
             continue
 
         metric = data.get("metric", "onbekend_metric")
@@ -98,7 +98,7 @@ def main_loop():
         print(f"💾 Snapshot opslaan: {current_snapshot}")
         save_snapshot(current_snapshot)
 
-        time.sleep(30)
+        time.sleep(60)
 
 if __name__ == "__main__":
     main_loop()
