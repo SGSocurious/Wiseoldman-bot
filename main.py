@@ -4,7 +4,7 @@ import time
 # === INSTELLINGEN ===
 COMPETITION_ID = 92352
 WEBHOOK_URL = "https://discord.com/api/webhooks/1379865773727547422/XB3C3tzt8pPV_8xf_pFsPlbz7_bfm1a0gb055tlY8QcZW5-jYK1MTtYYlRh35deYihcw"
-SLEEP_INTERVAL = 3600  # 1 uur in seconden
+SLEEP_INTERVAL = 30  # 1 uur in seconden
 
 last_snapshot = {}
 
