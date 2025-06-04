@@ -46,13 +46,13 @@ def main_loop():
 
         data = fetch_competition_data()
         if not data:
-            time.sleep(60)
+            time.sleep(30)
             continue
 
         participants = data.get("participants", [])
         if not participants:
             print("⚠️ Geen deelnemers gevonden.")
-            time.sleep(60)
+            time.sleep(30)
             continue
 
         metric = data.get("metric", "onbekend_metric")
@@ -87,18 +87,3 @@ def main_loop():
 
         if changes:
             msg = build_update_message(changes, metric)
-            print(f"\n📤 Versturen naar Discord:\n{msg}")
-            try:
-                requests.post(WEBHOOK_URL, json={"content": msg})
-            except Exception as e:
-                print(f"❌ Fout bij verzenden naar Discord: {e}")
-        else:
-            print("ℹ️ Geen veranderingen, geen Discord update.")
-
-        print(f"💾 Snapshot opslaan: {current_snapshot}")
-        save_snapshot(current_snapshot)
-
-        time.sleep(60)
-
-if __name__ == "__main__":
-    main_loop()
