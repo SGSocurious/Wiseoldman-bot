@@ -92,7 +92,7 @@ def main_loop():
             print("📸 Eerste run: snapshot opgeslagen zonder Discord-update.")
             first_run = False
         elif changes:
-            message = "**Update Competitie:**\n" + "\n".join(changes)
+            message = "**Update:**\n" + "\n".join(changes)
             send_discord_update(message)
         else:
             print("ℹ️ Geen veranderingen, geen Discord update.")
