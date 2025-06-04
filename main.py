@@ -83,7 +83,7 @@ def main_loop():
             print(f"DEBUG: Speler {username} heeft gained = {gained}, vorig = {old_gained}, verschil = {diff}")
 
             if diff > 0:
-                changes.append(f"🎉 {username} heeft {diff} punten gewonnen! (Totaal: {gained})")
+                changes.append(f"🎉 {username} heeft {diff}x Vorkath gekilled!! (Totaal: {gained})")
 
         if changes:
             message = "**Update Competitie:**\n" + "\n".join(changes)
