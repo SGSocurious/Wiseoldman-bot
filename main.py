@@ -44,6 +44,8 @@ def send_discord_update(message):
 
 def main_loop():
     print("🚀 Bot gestart...")
+
+    first_run = not os.path.exists(SNAPSHOT_FILE)
     last_snapshot = load_snapshot()
 
     while True:
@@ -65,8 +67,8 @@ def main_loop():
             time.sleep(30)
             continue
 
-        changes = []
         new_snapshot = {}
+        changes = []
 
         for p in participations:
             player = p.get("player", {})
@@ -75,17 +77,21 @@ def main_loop():
             gained = progress.get("gained", 0)
 
             player_id = str(p.get("playerId"))
-
             new_snapshot[player_id] = gained
+
             old_gained = last_snapshot.get(player_id, 0)
             diff = gained - old_gained
 
             print(f"DEBUG: Speler {username} heeft gained = {gained}, vorig = {old_gained}, verschil = {diff}")
 
-            if diff > 0:
-                changes.append(f"🎉 {username} heeft {diff}x Vorkath gekilled!! (Totaal: {gained})")
+            if not first_run and diff > 0:
+                changes.append(f"🎉 {username} heeft {diff}x Vorkath gekilld!! (Totaal: {gained})")
 
-        if changes:
+        # Bij eerste run: alleen snapshot opslaan
+        if first_run:
+            print("📸 Eerste run: snapshot opgeslagen zonder Discord-update.")
+            first_run = False
+        elif changes:
             message = "**Update Competitie:**\n" + "\n".join(changes)
             send_discord_update(message)
         else:
