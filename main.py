@@ -37,8 +37,16 @@ def get_competition_data():
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()
+
+    # Print volledige API response voor debugging (zorg dat het niet te groot is!)
+    print("📡 Volledige API response:")
+    print(json.dumps(data, indent=2))
+
     metric = data.get("metric", "unknown")
     participants = data.get("participants", [])
+    print(f"📡 API returned metric: {metric}")
+    print(f"👥 Aantal deelnemers: {len(participants)}")
+
     return metric, participants
 
 def build_message(participants, last_snapshot, metric_label):
