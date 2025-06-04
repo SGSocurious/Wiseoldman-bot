@@ -65,4 +65,27 @@ def main_loop():
             gained = progress.get("gained", 0)
 
             prev_gained = last_snapshot.get(username_key, 0)
-            delta =
+            delta = gained - prev_gained
+
+            print(f"🔍 {username}: vorige={prev_gained}, nu={gained}, verschil={delta}")
+
+            current_snapshot[username_key] = gained
+
+            if delta > 0:
+                changes[username] = (prev_gained, gained, delta)
+
+        if changes:
+            msg = build_update_message(changes, metric)
+            print(f"\n📤 Versturen naar Discord:\n{msg}")
+            requests.post(WEBHOOK_URL, json={"content": msg})
+        else:
+            print("ℹ️ Geen veranderingen, geen Discord update.")
+
+        print(f"💾 Snapshot opslaan: {current_snapshot}")
+        save_snapshot(current_snapshot)
+
+        time.sleep(30)
+
+
+if __name__ == "__main__":
+    main_loop()
