@@ -24,7 +24,7 @@ def save_snapshot(snapshot):
         print(f"❌ Fout bij opslaan van snapshot: {e}")
 
 def fetch_competition_data():
-    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
+    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}?expand=participants"
     try:
         response = requests.get(url)
         response.raise_for_status()
