@@ -59,7 +59,7 @@ def build_message(current_data):
 
     updates_found = False
 
-    for idx, player in enumerate(sorted_players[:10], start=1):
+        for idx, player in enumerate(sorted_players[:10], start=1):
         player_info = player.get("player", {})
         username = player_info.get("displayName", "Unknown")
         gained = player.get("progress", {}).get("gained", 0)
@@ -67,6 +67,8 @@ def build_message(current_data):
 
         prev_gained = last_snapshot.get(username, 0)
         diff = gained - prev_gained
+
+        print(f"🔎 {username}: vorige {prev_gained}, huidig {gained}, verschil {diff}")
 
         if diff > 0:
             updates_found = True
