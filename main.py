@@ -5,110 +5,64 @@ import os
 
 COMPETITION_ID = 92352
 WEBHOOK_URL = "https://discord.com/api/webhooks/1379865773727547422/XB3C3tzt8pPV_8xf_pFsPlbz7_bfm1a0gb055tlY8QcZW5-jYK1MTtYYlRh35deYihcw"
-SLEEP_INTERVAL = 60
 SNAPSHOT_FILE = "last_snapshot.json"
 
-METRIC_LABELS = {
-    "ehp": "EHP",
-    "ehb": "EHB",
-    "clue_all": "Clues",
-    "boss_general_graardor": "KC",
-    "hunter": "XP",
-    "fishing": "XP",
-    "magic": "XP",
-    "runecraft": "XP",
-}
 
 def load_snapshot():
-    if os.path.isfile(SNAPSHOT_FILE):
+    if os.path.exists(SNAPSHOT_FILE):
         with open(SNAPSHOT_FILE, "r") as f:
-            try:
-                return json.load(f)
-            except:
-                return {}
+            return json.load(f)
     return {}
+
 
 def save_snapshot(snapshot):
     with open(SNAPSHOT_FILE, "w") as f:
         json.dump(snapshot, f)
 
-def get_competition_data():
+
+def fetch_competition_data():
     url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
-    r = requests.get(url)
-    r.raise_for_status()
-    data = r.json()
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"❌ API fout: {response.status_code}")
+        return None
+    return response.json()
 
-    # Print volledige API response voor debugging (zorg dat het niet te groot is!)
-    print("📡 Volledige API response:")
-    print(json.dumps(data, indent=2))
 
-    metric = data.get("metric", "unknown")
-    participants = data.get("participants", [])
-    print(f"📡 API returned metric: {metric}")
-    print(f"👥 Aantal deelnemers: {len(participants)}")
+def build_update_message(changes, metric):
+    lines = [f"📈 **Update voor competitie `{metric}`**\n"]
+    for username, (old_gain, new_gain, delta) in changes.items():
+        lines.append(f"🔹 **{username}**: +{delta} ({old_gain} → {new_gain})")
+    return "\n".join(lines)
 
-    return metric, participants
-
-def build_message(participants, last_snapshot, metric_label):
-    lines = [f"📊 **Competition Update (last {SLEEP_INTERVAL}s, {metric_label})**"]
-    current_snapshot = {}
-    updates_found = False
-
-    sorted_players = sorted(
-        participants,
-        key=lambda x: x.get("progress", {}).get("gained", 0),
-        reverse=True
-    )
-
-    for idx, player in enumerate(sorted_players, start=1):
-        username = player.get("player", {}).get("displayName", "Unknown")
-        gained = player.get("progress", {}).get("gained", 0)
-        gained = int(gained)  # Zorg dat het een int is
-        prev_gained = int(last_snapshot.get(username, 0))
-        diff = gained - prev_gained
-        current_snapshot[username] = gained
-
-        print(f"🔎 {username}: vorige {prev_gained}, huidig {gained}, verschil {diff}")
-
-        if diff > 0:
-            updates_found = True
-            lines.append(f"**#{idx}** {username}: {gained:,} {metric_label} (+{diff:,})")
-
-    return "\n".join(lines) if updates_found else None, current_snapshot
-
-def send_to_discord(message):
-    payload = {"content": message}
-    try:
-        r = requests.post(WEBHOOK_URL, json=payload)
-        r.raise_for_status()
-        print("✅ Update verzonden naar Discord.")
-    except Exception as e:
-        print(f"⚠️ Fout bij verzenden naar Discord: {e}")
 
 def main_loop():
-    last_snapshot = load_snapshot()
-
+    print("🚀 Bot gestart...")
     while True:
-        try:
-            print("⏳ Ophalen van competitiegegevens...")
-            metric, participants = get_competition_data()
-            metric_label = METRIC_LABELS.get(metric, metric.upper())
+        print("\n⏳ Ophalen van competitiegegevens...")
 
-            message, current_snapshot = build_message(participants, last_snapshot, metric_label)
+        data = fetch_competition_data()
+        if not data:
+            print("⚠️ Geen data ontvangen van API.")
+            time.sleep(30)
+            continue
 
-            if message:
-                send_to_discord(message)
-            else:
-                print("ℹ️ Geen veranderingen, geen Discord update.")
+        participants = data.get("participants", [])
+        metric = data.get("metric", "onbekend_metric")
+        print(f"📊 Metric: {metric}")
+        print(f"👥 Aantal deelnemers: {len(participants)}")
 
-            print(f"💾 Snapshot opslaan: {current_snapshot}")
-            save_snapshot(current_snapshot)
-            last_snapshot = current_snapshot
+        last_snapshot = load_snapshot()
+        current_snapshot = {}
+        changes = {}
 
-        except Exception as e:
-            print(f"❌ Fout: {e}")
+        for p in participants:
+            player_data = p.get("player", {})
+            username = player_data.get("displayName", "Onbekend")
+            username_key = username.lower()
 
-        time.sleep(SLEEP_INTERVAL)
+            progress = p.get("progress", {})
+            gained = progress.get("gained", 0)
 
-if __name__ == "__main__":
-    main_loop()
+            prev_gained = last_snapshot.get(username_key, 0)
+            delta =
