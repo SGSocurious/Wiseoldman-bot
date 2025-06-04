@@ -24,7 +24,7 @@ def save_snapshot(snapshot):
         print(f"❌ Fout bij opslaan van snapshot: {e}")
 
 def fetch_competition_data():
-    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}?expand=participants"
+    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}?expand=participations"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -43,22 +43,22 @@ def main_loop():
             time.sleep(30)
             continue
 
-        # Print de hele data keys en of participants er in zitten
+        # Print de hele data keys en of participations er in zitten
         print(f"DEBUG: Keys in response: {list(data.keys())}")
-        participants = data.get("participants", None)
-        if participants is None:
-            print("⚠️ 'participants' is None! Controleer of '?expand=participants' werkt.")
+        participations = data.get("participations", None)
+        if participations is None:
+            print("⚠️ 'participations' is None! Controleer of '?expand=participations' werkt.")
             time.sleep(30)
             continue
 
-        print(f"DEBUG: Aantal deelnemers: {len(participants)}")
-        if len(participants) == 0:
+        print(f"DEBUG: Aantal deelnemers: {len(participations)}")
+        if len(participations) == 0:
             print("⚠️ Geen deelnemers gevonden.")
             time.sleep(30)
             continue
 
         # Print deelnemersnamen en hun gained waarde
-        for p in participants:
+        for p in participations:
             player_data = p.get("player", {})
             username = player_data.get("displayName", "<onbekend>")
             progress = p.get("progress", {})
