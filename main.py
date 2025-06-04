@@ -9,7 +9,7 @@ SLEEP_INTERVAL = 3600  # in seconden (1 uur)
 last_snapshot = {}
 
 def get_competition_data():
-    url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}/participants"
+    url = f"https://api.wiseoldman.net/v2/competitions/90678/top-5"
     response = requests.get(url)
     response.raise_for_status()
     return response.json()
