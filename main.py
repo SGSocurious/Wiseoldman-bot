@@ -33,12 +33,6 @@ def fetch_competition_data():
         print(f"❌ Fout bij ophalen van competitiegegevens: {e}")
         return None
 
-def build_update_message(changes, metric):
-    lines = [f"📢 **Update voor competitie** *(metric: {metric})*\n"]
-    for username, (old_gain, new_gain, delta) in changes.items():
-        lines.append(f"🔹 **{username}**: +{delta} (was {old_gain} → nu {new_gain})")
-    return "\n".join(lines)
-
 def main_loop():
     print("🚀 Bot gestart...")
     while True:
@@ -49,41 +43,31 @@ def main_loop():
             time.sleep(30)
             continue
 
-        participants = data.get("participants", [])
-        if not participants:
+        # Print de hele data keys en of participants er in zitten
+        print(f"DEBUG: Keys in response: {list(data.keys())}")
+        participants = data.get("participants", None)
+        if participants is None:
+            print("⚠️ 'participants' is None! Controleer of '?expand=participants' werkt.")
+            time.sleep(30)
+            continue
+
+        print(f"DEBUG: Aantal deelnemers: {len(participants)}")
+        if len(participants) == 0:
             print("⚠️ Geen deelnemers gevonden.")
             time.sleep(30)
             continue
 
-        metric = data.get("metric", "onbekend_metric")
-        print(f"📊 Metric: {metric}")
-        print(f"👥 Aantal deelnemers: {len(participants)}")
-
-        last_snapshot = load_snapshot()
-        current_snapshot = {}
-        changes = {}
-
+        # Print deelnemersnamen en hun gained waarde
         for p in participants:
             player_data = p.get("player", {})
-            username = player_data.get("displayName")
-            if not username:
-                continue
-            username_key = username.lower()
-
+            username = player_data.get("displayName", "<onbekend>")
             progress = p.get("progress", {})
-            gained = progress.get("gained")
-            if gained is None:
-                continue
+            gained = progress.get("gained", "<geen gained>")
+            print(f"DEBUG: Speler {username} heeft gained = {gained}")
 
-            prev_gained = last_snapshot.get(username_key, 0)
-            delta = gained - prev_gained
+        # Even stoppen hier om eerst te controleren wat binnenkomt
+        print("🔧 Debugcheck klaar, script pauzeert 60 seconden.")
+        time.sleep(60)
 
-            print(f"🔍 {username}: vorige={prev_gained}, nu={gained}, verschil={delta}")
-
-            current_snapshot[username_key] = gained
-
-            if delta > 0:
-                changes[username] = (prev_gained, gained, delta)
-
-        if changes:
-            msg = build_update_message(changes, metric)
+if __name__ == "__main__":
+    main_loop()
