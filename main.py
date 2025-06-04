@@ -19,16 +19,20 @@ def build_message(current_data):
     lines = ["📊 **Competition Update (last hour)**"]
     current_snapshot = {}
 
-    # Sorteer deelnemers op XP-groei (hoogste eerst)
-    sorted_players = sorted(current_data, key=lambda x: x['progress']['gained'], reverse=True)
+    # Controleer of we een lijst hebben
+    if not isinstance(current_data, list):
+        return "⚠️ API response unexpected: geen lijst ontvangen."
 
-    for idx, player in enumerate(sorted_players[:10], start=1):  # Top 10
-        username = player['player']['displayName']
-        gained = player['progress']['gained']
+    # Sorteer deelnemers op XP-groei
+    sorted_players = sorted(current_data, key=lambda x: x.get('progress', {}).get('gained', 0), reverse=True)
+
+    for idx, player in enumerate(sorted_players[:10], start=1):
+        player_data = player.get('player', {})
+        username = player_data.get('displayName', 'Unknown')
+        gained = player.get('progress', {}).get('gained', 0)
         rank_change = ""
         current_snapshot[username] = gained
 
-        # Bereken toename sinds vorige meting
         if username in last_snapshot:
             diff = gained - last_snapshot[username]
             if diff > 0:
@@ -42,6 +46,7 @@ def build_message(current_data):
 
     last_snapshot = current_snapshot
     return "\n".join(lines)
+
 
 def send_to_discord(message):
     payload = {
