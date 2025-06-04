@@ -4,12 +4,11 @@ import time
 # === INSTELLINGEN ===
 COMPETITION_ID = 92352
 WEBHOOK_URL = "https://discord.com/api/webhooks/1379865773727547422/XB3C3tzt8pPV_8xf_pFsPlbz7_bfm1a0gb055tlY8QcZW5-jYK1MTtYYlRh35deYihcw"
-SLEEP_INTERVAL = 30  # elke 30 seconden
+SLEEP_INTERVAL = 30  # Elke 30 seconden
 
 last_snapshot = {}
-metric_label = "gain"  # default label (XP, KC, etc.)
+metric_label = "gain"  # Wordt aangepast op basis van metric type
 
-# Optional: zet mapping van metrics → label
 METRIC_LABELS = {
     "ehp": "EHP",
     "ehb": "EHB",
@@ -19,12 +18,11 @@ METRIC_LABELS = {
     "fishing": "XP",
     "magic": "XP",
     "runecraft": "XP",
-    # Voeg meer toe als je wilt
+    # Voeg andere metrics toe indien gewenst
 }
 
 def get_competition_data():
     global metric_label
-
     url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
     response = requests.get(url)
     response.raise_for_status()
@@ -32,15 +30,14 @@ def get_competition_data():
     try:
         data = response.json()
     except ValueError:
-        print("⚠️ API response is geen geldige JSON.")
+        print("⚠️ Fout: API response is geen geldige JSON.")
         return None
 
     participants = data.get("participants", [])
     if not isinstance(participants, list):
-        print("⚠️ 'participants' veld is geen lijst:", participants)
+        print("⚠️ Fout: 'participants' is geen lijst.")
         return None
 
-    # Haal metric op en zet label voor Discord output
     metric = data.get("metric", "unknown")
     metric_label = METRIC_LABELS.get(metric, metric.upper())
 
@@ -59,12 +56,14 @@ def build_message(current_data):
 
     updates_found = False
 
-        for idx, player in enumerate(sorted_players[:10], start=1):
+    for idx, player in enumerate(sorted_players, start=1):
         player_info = player.get("player", {})
         username = player_info.get("displayName", "Unknown")
-        gained = player.get("progress", {}).get("gained", 0)
-        current_snapshot[username] = gained
 
+        progress = player.get("progress", {})
+        gained = progress.get("gained", 0)
+
+        current_snapshot[username] = gained
         prev_gained = last_snapshot.get(username, 0)
         diff = gained - prev_gained
 
