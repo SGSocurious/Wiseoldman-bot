@@ -9,51 +9,55 @@ SNAPSHOT_FILE = "last_snapshot.json"
 
 def load_snapshot():
     if os.path.exists(SNAPSHOT_FILE):
-        with open(SNAPSHOT_FILE, "r") as f:
-            try:
+        try:
+            with open(SNAPSHOT_FILE, "r") as f:
                 return json.load(f)
-            except json.JSONDecodeError:
-                return {}
+        except json.JSONDecodeError:
+            print("⚠️ Kon snapshot niet inladen, JSON is ongeldig.")
     return {}
 
 def save_snapshot(snapshot):
-    with open(SNAPSHOT_FILE, "w") as f:
-        json.dump(snapshot, f)
+    try:
+        with open(SNAPSHOT_FILE, "w") as f:
+            json.dump(snapshot, f)
+    except Exception as e:
+        print(f"❌ Fout bij opslaan van snapshot: {e}")
 
 def fetch_competition_data():
     url = f"https://api.wiseoldman.net/v2/competitions/{COMPETITION_ID}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        print(f"❌ API fout: {response.status_code}")
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"❌ Fout bij ophalen van competitiegegevens: {e}")
         return None
-    return response.json()
 
 def build_update_message(changes, metric):
-    lines = [f"\ud83d\udcc8 **Update voor competitie `{metric}`**\n"]
+    lines = [f"📈 **Update voor competitie `{metric}`**\n"]
     for username, (old_gain, new_gain, delta) in changes.items():
-        lines.append(f"\ud83d\udd39 **{username}**: +{delta} ({old_gain} \u2192 {new_gain})")
+        lines.append(f"🔹 **{username}**: +{delta} ({old_gain} → {new_gain})")
     return "\n".join(lines)
 
 def main_loop():
-    print("\ud83d\ude80 Bot gestart...")
+    print("🚀 Bot gestart...")
     while True:
-        print("\n\u23f3 Ophalen van competitiegegevens...")
+        print("\n⏳ Ophalen van competitiegegevens...")
 
         data = fetch_competition_data()
         if not data:
-            print("\u26a0\ufe0f Geen data ontvangen van API.")
             time.sleep(30)
             continue
 
         participants = data.get("participants")
-        if participants is None:
-            print("\u26a0\ufe0f Geen deelnemers gevonden in de API response.")
+        if not isinstance(participants, list):
+            print("⚠️ Geen deelnemers gevonden.")
             time.sleep(30)
             continue
 
         metric = data.get("metric", "onbekend_metric")
-        print(f"\ud83d\udcc8 Metric: {metric}")
-        print(f"\ud83d\udc65 Aantal deelnemers: {len(participants)}")
+        print(f"📊 Metric: {metric}")
+        print(f"👥 Aantal deelnemers: {len(participants)}")
 
         last_snapshot = load_snapshot()
         current_snapshot = {}
@@ -67,12 +71,14 @@ def main_loop():
             username_key = username.lower()
 
             progress = p.get("progress", {})
-            gained = progress.get("gained", 0)
+            gained = progress.get("gained")
+            if gained is None:
+                continue
 
             prev_gained = last_snapshot.get(username_key, 0)
             delta = gained - prev_gained
 
-            print(f"\ud83d\udd0d {username}: vorige={prev_gained}, nu={gained}, verschil={delta}")
+            print(f"🔍 {username}: vorige={prev_gained}, nu={gained}, verschil={delta}")
 
             current_snapshot[username_key] = gained
 
@@ -81,12 +87,15 @@ def main_loop():
 
         if changes:
             msg = build_update_message(changes, metric)
-            print(f"\n\ud83d\udce4 Versturen naar Discord:\n{msg}")
-            requests.post(WEBHOOK_URL, json={"content": msg})
+            print(f"\n📤 Versturen naar Discord:\n{msg}")
+            try:
+                requests.post(WEBHOOK_URL, json={"content": msg})
+            except Exception as e:
+                print(f"❌ Fout bij verzenden naar Discord: {e}")
         else:
-            print("\u2139\ufe0f Geen veranderingen, geen Discord update.")
+            print("ℹ️ Geen veranderingen, geen Discord update.")
 
-        print(f"\ud83d\udcc0 Snapshot opslaan: {current_snapshot}")
+        print(f"💾 Snapshot opslaan: {current_snapshot}")
         save_snapshot(current_snapshot)
 
         time.sleep(30)
