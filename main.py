@@ -54,6 +54,7 @@ def main_loop():
     while True:
         try:
             data = get_competition_data()
+            print("DEBUG: API response:", data)
             message = build_message(data)
             send_to_discord(message)
             print("✅ Discord update verstuurd.")
