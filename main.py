@@ -43,22 +43,22 @@ def main_loop():
             time.sleep(30)
             continue
 
-        # Print de hele data keys en of playerId er in zitten
+        # Print de hele data keys en of participations er in zitten
         print(f"DEBUG: Keys in response: {list(data.keys())}")
-        playerId = data.get("playerId", None)
-        if playerId is None:
-            print("⚠️ 'playerId' is None! Controleer of '?expand=playerId' werkt.")
+        participations = data.get("participations", None)
+        if participations is None:
+            print("⚠️ 'participations' is None! Controleer of '?expand=participations' werkt.")
             time.sleep(30)
             continue
 
-        print(f"DEBUG: Aantal deelnemers: {len(playerId)}")
-        if len(playerId) == 0:
+        print(f"DEBUG: Aantal deelnemers: {len(participations)}")
+        if len(participations) == 0:
             print("⚠️ Geen deelnemers gevonden.")
             time.sleep(30)
             continue
 
         # Print deelnemersnamen en hun gained waarde
-        for p in playerId:
+        for p in participations:
             player_data = p.get("player", {})
             username = player_data.get("displayName", "<onbekend>")
             progress = p.get("progress", {})
