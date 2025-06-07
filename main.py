@@ -101,7 +101,7 @@ def main_loop():
         last_snapshot = new_snapshot
 
         print("🔧 Debugcheck klaar, script pauzeert 60 seconden.")
-        time.sleep(60)
+        time.sleep(90)
 
 if __name__ == "__main__":
     main_loop()
