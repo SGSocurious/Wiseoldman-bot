@@ -4,7 +4,7 @@ import json
 import os
 
 COMPETITION_ID = 90678
-WEBHOOK_URL = "https://discord.com/api/webhooks/1379865773727547422/XB3C3tzt8pPV_8xf_pFsPlbz7_bfm1a0gb055tlY8QcZW5-jYK1MTtYYlRh35deYihcw"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1380961397214547989/tbp_zd_3JaszWvXi40d5XlmXNyjGrIFjHxJvz6rGSJWbZjXB5oL6dkvfxy7qG0kvhecZ"
 SNAPSHOT_FILE = "last_snapshot.json"
 
 def load_snapshot():
